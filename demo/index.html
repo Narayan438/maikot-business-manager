@@ -15,11 +15,12 @@
     <button data-panel="products">Products</button>
     <button data-panel="suppliers">Suppliers</button>
     <button data-panel="purchases">Purchase Entry</button>
+    <button data-panel="stock">Stock / Inventory</button>
     <button data-panel="comparison">Price Comparison</button>
   </div>
 </aside>
 <main class="main">
-  <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div class="muted">Demo v1 • Data stays in this browser</div></div>
+  <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div class="muted">Demo v1.1 • Data stays in this browser</div></div>
 
   <section id="dashboard" class="panel active">
     <div class="cards">
@@ -27,6 +28,9 @@
       <div class="card"><div class="label">Suppliers</div><div class="value" id="suppliersCount">0</div></div>
       <div class="card"><div class="label">Purchase Entries</div><div class="value" id="purchasesCount">0</div></div>
       <div class="card"><div class="label">Total Purchase</div><div class="value" id="totalPurchase">Rs. 0</div></div>
+      <div class="card"><div class="label">Total Stock Qty</div><div class="value" id="totalStockQty">0</div></div>
+      <div class="card"><div class="label">Estimated Stock Value</div><div class="value" id="stockValue">Rs. 0</div></div>
+      <div class="card"><div class="label">Low Stock Items</div><div class="value" id="lowStockCount">0</div></div>
     </div>
     <div class="box">
       <div class="notice"><b>Test Mode:</b> No database is used. Your entries are saved only in this browser using LocalStorage.</div>
@@ -44,9 +48,10 @@
         <label>Brand / Model<input name="brand_model"></label>
         <label>Unit<input name="unit" value="Piece"></label>
         <label>Selling Price<input name="selling_price" type="number" step="0.01" value="0"></label>
+        <label>Reorder Level / Minimum Stock<input name="reorder_level" type="number" step="0.01" min="0" value="0"></label>
       </div><div class="actions"><button class="primary">Save Product</button></div></form>
     </div>
-    <div class="box"><h3>Product List</h3><table><thead><tr><th>Code</th><th>Product</th><th>Category</th><th>Brand/Model</th><th>Unit</th><th>Selling Price</th><th></th></tr></thead><tbody id="productBody"></tbody></table></div>
+    <div class="box"><h3>Product List</h3><table><thead><tr><th>Code</th><th>Product</th><th>Category</th><th>Brand/Model</th><th>Unit</th><th>Selling Price</th><th>Reorder Level</th><th></th></tr></thead><tbody id="productBody"></tbody></table></div>
   </section>
 
   <section id="suppliers" class="panel">
@@ -77,6 +82,14 @@
       </div><div class="actions"><button class="primary">Save Purchase</button></div></form>
     </div>
     <div class="box"><h3>Purchase History</h3><table><thead><tr><th>Date</th><th>Product</th><th>Supplier</th><th>Qty</th><th>Rate</th><th>Actual Cost/Unit</th><th>Selling Price</th><th>Profit/Unit</th><th></th></tr></thead><tbody id="purchaseBody"></tbody></table></div>
+  </section>
+
+  <section id="stock" class="panel">
+    <div class="box">
+      <h3>Current Stock / Inventory</h3>
+      <div class="notice"><b>Current demo logic:</b> Stock = total purchased quantity. Sales/stock-out will be added next, then Current Stock = Purchase − Sales.</div>
+      <table><thead><tr><th>Code</th><th>Product</th><th>Category</th><th>Unit</th><th>Purchased Qty</th><th>Current Stock</th><th>Avg. Cost/Unit</th><th>Stock Value</th><th>Reorder Level</th><th>Status</th></tr></thead><tbody id="stockBody"></tbody></table>
+    </div>
   </section>
 
   <section id="comparison" class="panel">
