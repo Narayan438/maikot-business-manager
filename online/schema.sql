@@ -1,0 +1,154 @@
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS=0;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  username VARCHAR(80) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','staff') NOT NULL DEFAULT 'staff',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS products (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_code VARCHAR(40) NOT NULL UNIQUE,
+  product_name VARCHAR(180) NOT NULL,
+  main_category VARCHAR(100) DEFAULT NULL,
+  category VARCHAR(120) DEFAULT NULL,
+  barcode VARCHAR(100) DEFAULT NULL UNIQUE,
+  brand_model VARCHAR(150) DEFAULT NULL,
+  unit VARCHAR(40) NOT NULL DEFAULT 'Piece',
+  selling_price DECIMAL(14,2) NOT NULL DEFAULT 0,
+  reorder_level DECIMAL(14,2) NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_products_name (product_name),
+  INDEX idx_products_category (main_category, category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  supplier_code VARCHAR(40) NOT NULL UNIQUE,
+  supplier_name VARCHAR(180) NOT NULL,
+  contact_person VARCHAR(120) DEFAULT NULL,
+  phone VARCHAR(50) DEFAULT NULL,
+  address VARCHAR(220) DEFAULT NULL,
+  pan_vat VARCHAR(80) DEFAULT NULL,
+  remarks TEXT DEFAULT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_suppliers_name (supplier_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  purchase_date DATE NOT NULL,
+  product_id INT UNSIGNED NOT NULL,
+  supplier_id INT UNSIGNED NOT NULL,
+  qty DECIMAL(14,3) NOT NULL,
+  purchase_unit VARCHAR(40) NOT NULL DEFAULT 'Piece',
+  units_per_unit DECIMAL(14,3) NOT NULL DEFAULT 1,
+  purchase_rate DECIMAL(14,2) NOT NULL,
+  discount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  transport DECIMAL(14,2) NOT NULL DEFAULT 0,
+  transport_mode ENUM('per_base','total') NOT NULL DEFAULT 'total',
+  other_cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  other_cost_mode ENUM('per_base','total') NOT NULL DEFAULT 'total',
+  note VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_purchases_product FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_purchases_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+  INDEX idx_purchases_date (purchase_date),
+  INDEX idx_purchases_product (product_id),
+  INDEX idx_purchases_supplier (supplier_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS parties (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  party_code VARCHAR(40) NOT NULL UNIQUE,
+  party_name VARCHAR(180) NOT NULL,
+  phone VARCHAR(50) DEFAULT NULL,
+  address VARCHAR(220) DEFAULT NULL,
+  pan_vat VARCHAR(80) DEFAULT NULL,
+  opening_balance DECIMAL(14,2) NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_parties_name (party_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sales (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  bill_no VARCHAR(50) NOT NULL UNIQUE,
+  sale_date DATE NOT NULL,
+  party_id INT UNSIGNED DEFAULT NULL,
+  customer_name VARCHAR(180) NOT NULL DEFAULT 'Cash Customer',
+  customer_phone VARCHAR(50) DEFAULT NULL,
+  customer_address VARCHAR(220) DEFAULT NULL,
+  customer_pan VARCHAR(80) DEFAULT NULL,
+  payment_type ENUM('Cash','Credit','Online','Cheque') NOT NULL DEFAULT 'Cash',
+  payment_reference VARCHAR(150) DEFAULT NULL,
+  bank_wallet VARCHAR(150) DEFAULT NULL,
+  discount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  vat_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  vat_rate DECIMAL(7,3) NOT NULL DEFAULT 0,
+  vat_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  due_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  status ENUM('posted','cancelled') NOT NULL DEFAULT 'posted',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sales_party FOREIGN KEY (party_id) REFERENCES parties(id) ON UPDATE CASCADE ON DELETE SET NULL,
+  INDEX idx_sales_date (sale_date),
+  INDEX idx_sales_party (party_id),
+  INDEX idx_sales_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sale_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sale_id INT UNSIGNED NOT NULL,
+  product_id INT UNSIGNED NOT NULL,
+  qty DECIMAL(14,3) NOT NULL,
+  rate DECIMAL(14,2) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sale_items_sale FOREIGN KEY (sale_id) REFERENCES sales(id) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_sale_items_product FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+  INDEX idx_sale_items_sale (sale_id),
+  INDEX idx_sale_items_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS payments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  party_id INT UNSIGNED NOT NULL,
+  payment_date DATE NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  mode ENUM('Cash','Online','Cheque') NOT NULL DEFAULT 'Cash',
+  reference VARCHAR(150) DEFAULT NULL,
+  bank_wallet VARCHAR(150) DEFAULT NULL,
+  note VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_payments_party FOREIGN KEY (party_id) REFERENCES parties(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+  INDEX idx_payments_party (party_id),
+  INDEX idx_payments_date (payment_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT DEFAULT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO app_settings (setting_key, setting_value) VALUES
+('business_name','Maikot Computer & Stationery'),
+('business_address','Sugamtol, Dhading'),
+('business_phone','010-590058, 9849024694'),
+('schema_version','1')
+ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value);
+
+SET FOREIGN_KEY_CHECKS=1;
