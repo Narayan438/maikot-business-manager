@@ -27,3 +27,36 @@ saveBillBtn.onclick=()=>{if(!billCart.length)return alert('Add at least one item
 window.printBill=id=>{const s=byId(state.sales,id);if(!s)return;const rows=(s.items||[]).map((i,n)=>{const p=byId(state.products,i.product_id);return `<tr><td>${n+1}</td><td>${esc(p?.product_name||'')}</td><td class="num">${i.qty} ${esc(p?.unit||'')}</td><td class="num">${Number(i.rate).toFixed(2)}</td><td class="num">${Number(i.qty*i.rate).toFixed(2)}</td></tr>`}).join(''),w=window.open('','_blank','width=650,height=850');if(!w)return alert('Please allow pop-ups.');w.document.write(`<!doctype html><html><head><title>${esc(s.bill_no)}</title><style>@page{size:A5 portrait;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0;font-size:11px}h1{text-align:center;font-size:19px;margin:0}.center{text-align:center;margin:2px}.title{text-align:center;font-size:14px;font-weight:bold;border-top:1px solid #333;border-bottom:1px solid #333;padding:5px;margin:8px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #444;padding:5px}.num{text-align:right}.totals{width:62%;margin-left:auto;margin-top:8px}.totals div{display:flex;justify-content:space-between;padding:2px}.grand{font-weight:bold;border-top:1px solid #333;padding-top:5px!important}.due{font-weight:bold}.footer{text-align:center;margin-top:18px}@media print{button{display:none}}</style></head><body><h1>MAIKOT COMPUTER & STATIONERY</h1><p class="center">Sugamtol, Dhading</p><p class="center">Contact: 010-590058, 9849024694</p><div class="title">SALES BILL</div><div class="meta"><div><b>Bill:</b> ${esc(s.bill_no)}</div><div><b>Date:</b> ${esc(s.sale_date)}</div><div><b>Party:</b> ${esc(s.customer_name)}</div><div><b>Phone:</b> ${esc(s.customer_phone||'-')}</div><div><b>Address:</b> ${esc(s.customer_address||'-')}</div><div><b>PAN/VAT:</b> ${esc(s.customer_pan||'-')}</div></div><table><tr><th>#</th><th>Particulars</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table><div class="totals"><div><span>Subtotal</span><b>${money(saleSubtotal(s))}</b></div><div><span>Discount</span><b>${money(s.discount)}</b></div><div><span>Taxable</span><b>${money(saleTaxable(s))}</b></div>${s.vat_enabled?`<div><span>VAT (${s.vat_rate}%)</span><b>${money(saleVat(s))}</b></div>`:''}<div class="grand"><span>Grand Total</span><span>${money(saleTotal(s))}</span></div><div><span>Paid</span><span>${money(salePaid(s))}</span></div><div class="due"><span>Due</span><span>${money(saleDue(s))}</span></div><div><span>Payment</span><span>${esc(s.payment_type||'Cash')}</span></div>${s.payment_reference?`<div><span>Reference</span><span>${esc(s.payment_reference)}</span></div>`:''}${s.bank_wallet?`<div><span>Bank/Wallet</span><span>${esc(s.bank_wallet)}</span></div>`:''}</div><p class="footer">Thank you for your business.</p><p class="center"><button onclick="window.print()">Print A5 Bill</button></p></body></html>`);w.document.close()};
 const _renderAll=renderAll;renderAll=function(){_renderAll();renderPartySelects();renderParties();billPaymentPreview()};
 cancelParty();renderAll();
+
+/* v2.0 data safety: disable sample overwrite, add backup/restore, and protect reset. */
+(function setupDataSafety(){
+  if(typeof loadSampleBtn!=='undefined'&&loadSampleBtn){loadSampleBtn.onclick=null;loadSampleBtn.style.display='none';}
+  const box=document.querySelector('#dashboard .box');
+  if(!box)return;
+  const notice=box.querySelector('.notice');
+  if(notice)notice.innerHTML='<b>Data Safety:</b> Your business data is stored in this browser. Download a backup regularly, especially before browser cleanup or device change.';
+  let tools=document.getElementById('dataSafetyTools');
+  if(!tools){
+    tools=document.createElement('div');tools.id='dataSafetyTools';tools.className='actions';
+    tools.innerHTML='<button class="primary" id="backupDataBtn" type="button">⬇ Backup Data</button><button class="primary" id="restoreDataBtn" type="button">⬆ Restore Data</button><input id="restoreDataFile" type="file" accept="application/json,.json" style="display:none"><button id="safeResetBtn" type="button" style="background:#8b2f2f;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer">Reset All Data</button>';
+    box.appendChild(tools);
+  }
+  if(typeof resetBtn!=='undefined'&&resetBtn){resetBtn.onclick=null;resetBtn.style.display='none';}
+  const backupBtn=document.getElementById('backupDataBtn'),restoreBtn=document.getElementById('restoreDataBtn'),restoreFile=document.getElementById('restoreDataFile'),safeResetBtn=document.getElementById('safeResetBtn');
+  backupBtn.onclick=()=>{
+    const payload={...state,_backup_meta:{app:'Maikot Business Manager',storage_key:KEY,created_at:new Date().toISOString(),version:'2.0'}};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a'),d=todayISO();
+    a.href=URL.createObjectURL(blob);a.download=`Maikot-Business-Backup-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+  restoreBtn.onclick=()=>restoreFile.click();
+  restoreFile.onchange=()=>{
+    const f=restoreFile.files&&restoreFile.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{const d=JSON.parse(r.result);for(const k of ['products','suppliers','purchases','sales'])if(!Array.isArray(d[k]))throw new Error(`Missing or invalid ${k} array`);d.parties=Array.isArray(d.parties)?d.parties:[];d.payments=Array.isArray(d.payments)?d.payments:[];delete d._backup_meta;const summary=`Products: ${d.products.length}\nSuppliers: ${d.suppliers.length}\nPurchases: ${d.purchases.length}\nSales: ${d.sales.length}\nParties: ${d.parties.length}\nPayments: ${d.payments.length}`;if(!confirm('Restore this backup?\n\n'+summary+'\n\nCurrent browser data will be replaced.'))return;localStorage.setItem(KEY,JSON.stringify(d));alert('Restore successful. The page will reload now.');location.reload()}catch(err){alert('Restore failed: '+err.message)}};r.readAsText(f);restoreFile.value='';
+  };
+  safeResetBtn.onclick=()=>{
+    const typed=prompt('DANGER: This deletes ALL business data in this browser.\n\nType DELETE ALL exactly to continue.');
+    if(typed!=='DELETE ALL')return alert('Reset cancelled. No data was deleted.');
+    if(!confirm('Final confirmation: permanently delete Products, Suppliers, Purchases, Sales, Parties and Payments?'))return;
+    state.products=[];state.suppliers=[];state.purchases=[];state.sales=[];state.parties=[];state.payments=[];billCart=[];save();cancelProduct();cancelSupplier();cancelPurchase();cancelParty();renderAll();alert('All browser data has been reset.');
+  };
+})();
