@@ -1,0 +1,11 @@
+# Server-only secrets
+online/config/database.php
+
+# Local data backups / exports
+*.backup.json
+Maikot-Backup-*.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
