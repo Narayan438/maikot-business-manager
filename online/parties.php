@@ -1,0 +1,1 @@
+<?php $view='parties';require __DIR__.'/operations.php';
