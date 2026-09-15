@@ -1,7 +1,4 @@
 <?php
-// MeroKhata Products page: preserve current module and inject shared navigation.
-ob_start();
-require __DIR__.'/products-online.php';
-$html=ob_get_clean();
-// products-online.php already injects online-nav.js. Output unchanged.
-echo $html;
+// Stable wrapper: run the preserved Products implementation and add shared navigation.
+// The implementation is kept in products-page.php to avoid circular includes.
+require __DIR__.'/products-page.php';
