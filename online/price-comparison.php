@@ -1,0 +1,1 @@
+<?php $view='compare';require __DIR__.'/operations.php';
