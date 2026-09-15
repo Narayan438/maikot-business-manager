@@ -1,0 +1,1 @@
+<?php $view='reports';require __DIR__.'/operations.php';
