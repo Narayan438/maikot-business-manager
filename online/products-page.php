@@ -1,0 +1,1 @@
+<?php ob_start();require __DIR__.'/products-original.php';$html=ob_get_clean();echo str_replace('</body>','<script src="assets/js/online-nav.js"></script></body>',$html);
