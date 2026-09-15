@@ -1,0 +1,1 @@
+<?php $view='stock';require __DIR__.'/operations.php';
