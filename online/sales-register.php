@@ -1,0 +1,1 @@
+<?php $view='register';require __DIR__.'/operations.php';
