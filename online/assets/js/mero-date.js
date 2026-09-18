@@ -22,6 +22,12 @@
     ad.addEventListener('change',()=>{const x=convert(ad.value,'AD');if(x){bs.value=x;hidden.value=x}else alert('Invalid/unsupported AD date.');});
     b1.onclick=()=>show('BS');b2.onclick=()=>show('AD');show(mode);
   }
-  window.MeroDate={convert,init};
-  document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.mk-dual-date').forEach(init));
+  function decorate(){
+    document.querySelectorAll('[data-mk-bs-date]').forEach(el=>{
+      const bs=el.dataset.mkBsDate||el.textContent.trim(), ad=convert(bs,'BS');
+      if(ad) el.innerHTML='<span class="mk-date-primary">'+bs+' BS</span><br><span class="mk-date-secondary">'+ad+' AD</span>';
+    });
+  }
+  window.MeroDate={convert,init,decorate};
+  document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.mk-dual-date').forEach(init);decorate();});
 })();
